@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>FPS Aim Trainer</title>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { 
+            margin: 0; 
+            overflow: hidden;
+        }
+        canvas { 
+            display: block; 
+        }
+        #score {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            color: white;
+            font-family: Arial;
+            font-size: 24px;
+            z-index: 100;
+        }
+        #crosshair {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 24px;
+            z-index: 100;
+            pointer-events: none;
+        }
+        #fullscreenBtn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 10px;
+            z-index: 100;
+        }
+        #hitText {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-family: Arial, sans-serif;
+            font-size: 24px;
+            font-weight: bold;
+            transition: all 0.1s ease;
+            pointer-events: none;
+            z-index: 1000;
+            opacity: 0;
+        }
+        #pauseMenu {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .menu-content {
+            background-color: #2a2a2a;
+            padding: 2rem;
+            border-radius: 10px;
+            text-align: center;
+            min-width: 300px;
+        }
+        .menu-content h2 {
+            color: white;
+            margin-bottom: 2rem;
+        }
+        .menu-content button {
+            display: block;
+            width: 100%;
+            padding: 1rem;
+            margin: 1rem 0;
+            background-color: #4a4a4a;
+            border: none;
+            border-radius: 5px;
+            color: white;
+            cursor: pointer;
+            font-size: 1.1rem;
+            transition: background-color 0.2s;
+        }
+        .menu-content button:hover {
+            background-color: #5a5a5a;
+        }
+        .sensitivity-control {
+            margin: 1.5rem 0;
+            color: white;
+            text-align: left;
+        }
+        .sensitivity-control input {
+            width: 100%;
+            margin-top: 0.5rem;
+        }
+        .leaderboard {
+            background-color: #3a3a3a;
+            border-radius: 5px;
+            padding: 1rem;
+            margin: 1rem 0;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .leaderboard h3 {
+            color: #ffd700;
+            margin: 0 0 1rem 0;
+        }
+        .score-entry {
+            display: flex;
+            justify-content: space-between;
+            color: white;
+            padding: 0.5rem;
+            border-bottom: 1px solid #4a4a4a;
+        }
+        .score-entry:last-child {
+            border-bottom: none;
+        }
+        .score-entry.highlight {
+            background-color: #4a4a4a;
+        }
+        #gameOverModal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9);
+            z-index: 1001;
+            display: none;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background-color: #2a2a2a;
+            padding: 2rem;
+            border-radius: 10px;
+            text-align: center;
+            color: white;
+        }
+        #playerName {
+            padding: 0.5rem;
+            margin: 1rem 0;
+            width: 200px;
+            background-color: #4a4a4a;
+            border: none;
+            border-radius: 5px;
+            color: white;
+        }
+        #newHighScore {
+            margin: 1rem 0;
+            color: #ffd700;
+        }
+        #gameHUD {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            font-family: 'Rajdhani', sans-serif;
+            z-index: 100;
+        }
+        .hud-top-container {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            background: linear-gradient(90deg, 
+                rgba(0,0,0,0) 0%, 
+                rgba(0,0,0,0.4) 20%, 
+                rgba(0,0,0,0.4) 80%, 
+                rgba(0,0,0,0) 100%
+            );
+            padding: 10px 40px;
+            border-radius: 8px;
+            min-width: 400px;
+        }
+        .hud-divider {
+            width: 2px;
+            height: 40px;
+            background: rgba(255, 255, 255, 0.2);
+            margin: 0 20px;
+        }
+        .score-container, .timer-container {
+            flex: 1;
+            text-align: center;
+            color: #fff;
+            text-shadow: 0 0 10px rgba(0,0,0,0.5);
+            padding: 0 20px;
+        }
+        .score-container {
+            text-align: right;
+            border-right: none;
+        }
+        .timer-container {
+            text-align: left;
+            border-left: none;
+        }
+        .score-label, .timer-label {
+            font-size: 14px;
+            font-weight: 600;
+            letter-spacing: 2px;
+            opacity: 0.8;
+            text-transform: uppercase;
+        }
+        #score, #timer {
+            font-size: 32px;
+            font-weight: 700;
+            line-height: 1;
+            margin-top: 5px;
+        }
+        .crosshair-container {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 20px;
+            height: 20px;
+        }
+        .crosshair-dot {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 4px;
+            height: 4px;
+            background-color: rgba(255, 255, 255, 0.8);
+            border-radius: 50%;
+        }
+        .crosshair-lines {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+        }
+        .line {
+            position: absolute;
+            background-color: rgba(255, 255, 255, 0.8);
+        }
+        .line-top, .line-bottom {
+            left: 50%;
+            transform: translateX(-50%);
+            width: 2px;
+            height: 8px;
+        }
+        .line-left, .line-right {
+            top: 50%;
+            transform: translateY(-50%);
+            height: 2px;
+            width: 8px;
+        }
+        .line-top { top: 0; }
+        .line-right { right: 0; }
+        .line-bottom { bottom: 0; }
+        .line-left { left: 0; }
+        .streak-counter {
+            position: absolute;
+            right: 30px;
+            top: 50%;
+            transform: translateY(-50%);
+            text-align: right;
+            color: #fff;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        .streak-counter.active {
+            opacity: 1;
+        }
+        .streak-number {
+            font-size: 48px;
+            font-weight: 700;
+            line-height: 1;
+            color: #ff4655;
+            text-shadow: 0 0 10px rgba(255, 70, 85, 0.5);
+        }
+        .streak-text {
+            font-size: 14px;
+            letter-spacing: 2px;
+            opacity: 0.8;
+        }
+        @keyframes hitMarker {
+            0% { transform: scale(1.2); opacity: 1; }
+            100% { transform: scale(1.5); opacity: 0; }
+        }
+        .hit-marker {
+            position: absolute;
+            pointer-events: none;
+            width: 20px;
+            height: 20px;
+            animation: hitMarker 0.2s ease-out forwards;
+        }
+        @keyframes scorePopup {
+            0% { transform: translateY(0) scale(1); opacity: 1; }
+            100% { transform: translateY(-20px) scale(1.2); opacity: 0; }
+        }
+        .score-popup {
+            position: absolute;
+            color: #fff;
+            font-size: 16px;
+            font-weight: 600;
+            text-shadow: 0 0 5px rgba(0,0,0,0.5);
+            animation: scorePopup 0.5s ease-out forwards;
+            pointer-events: none;
+        }
+        .hud-top-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(90deg, 
+                rgba(255,255,255,0) 0%, 
+                rgba(255,255,255,0.1) 50%, 
+                rgba(255,255,255,0) 100%
+            );
+            pointer-events: none;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div id="gameHUD">
+        <div class="hud-top-container">
+            <div class="score-container">
+                <div class="score-label">SCORE</div>
+                <div id="score">0</div>
+            </div>
+            <div class="hud-divider"></div>
+            <div class="timer-container">
+                <div class="timer-label">TIME</div>
+                <div id="timer">60</div>
+            </div>
+        </div>
+        
+        <div class="crosshair-container">
+            <div class="crosshair-dot"></div>
+            <div class="crosshair-lines">
+                <div class="line line-top"></div>
+                <div class="line line-right"></div>
+                <div class="line line-bottom"></div>
+                <div class="line line-left"></div>
+            </div>
+        </div>
+        
+        <div class="streak-counter" id="streakCounter">
+            <div class="streak-number">0</div>
+            <div class="streak-text">STREAK</div>
+        </div>
+    </div>
+    <div id="pauseMenu" style="display: none;">
+        <div class="menu-content">
+            <h2>PAUSED</h2>
+            <button id="resumeBtn">Resume</button>
+            <div class="leaderboard">
+                <h3>High Scores</h3>
+                <div id="leaderboardList"></div>
+            </div>
+            <div class="sensitivity-control">
+                <label for="sensitivity">Mouse Sensitivity: <span id="sensValue">1.0</span></label>
+                <input type="range" id="sensitivity" min="0.1" max="5" step="0.1" value="1">
+            </div>
+            <button id="fullscreenBtn">Toggle Fullscreen</button>
+            <button id="restartBtn">Restart Game</button>
+        </div>
+    </div>
+    <div id="gameOverModal" style="display: none;">
+        <div class="modal-content">
+            <h2>Game Over!</h2>
+            <p>Your Score: <span id="finalScore">0</span></p>
+            <div id="newHighScore" style="display: none;">
+                <p>New High Score!</p>
+                <input type="text" id="playerName" placeholder="Enter your name" maxlength="15">
+                <button id="submitScore">Submit Score</button>
+            </div>
+            <button id="playAgain">Play Again</button>
+        </div>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/howler/2.2.3/howler.min.js"></script>
+    <script src="game.js"></script>
+</body>
+</html> 
