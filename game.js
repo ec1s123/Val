@@ -1,31 +1,18 @@
-// Audio setup with distinct sounds
+// Audio setup with clear feedback sounds
 const sounds = {
     hit: new Howl({
-        src: ['https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3'], // Regular hit - metallic ding
-        volume: 0.4
+        src: ['https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3'], // Regular hit sound
+        volume: 0.4,
+        rate: 1.2 // Slightly faster for snappier feedback
     }),
     miss: new Howl({
-        src: ['https://assets.mixkit.co/active_storage/sfx/2947/2947-preview.mp3'], // Miss - whoosh sound
+        src: ['https://assets.mixkit.co/active_storage/sfx/2947/2947-preview.mp3'], // Miss sound
         volume: 0.3
     }),
     perfect: new Howl({
-        src: ['https://assets.mixkit.co/active_storage/sfx/1434/1434-preview.mp3'], // Perfect - high pitched success sound
+        src: ['https://assets.mixkit.co/active_storage/sfx/1434/1434-preview.mp3'], // Perfect hit sound
         volume: 0.5
-    }),
-    hitLayered: {
-        primary: new Howl({
-            src: ['primary_hit.mp3'],
-            volume: 0.4
-        }),
-        secondary: new Howl({
-            src: ['secondary_hit.mp3'],
-            volume: 0.2
-        }),
-        play: function() {
-            this.primary.play();
-            this.secondary.play();
-        }
-    }
+    })
 };
 
 // Three.js setup
@@ -54,9 +41,9 @@ const keys = {
 };
 
 // Mouse control variables
-const sensitivity = 0.002;
+const sensitivity = 0.0015; // Reduced slightly for more stability
 let isPointerLocked = false;
-let verticalRotation = 0; // Track vertical rotation separately
+let verticalRotation = 0;
 
 // Lighting
 const light = new THREE.DirectionalLight(0xffffff, 1);
@@ -91,7 +78,7 @@ let baseSensitivity = 0.002;
 let sensitivityMultiplier = 1.0;
 const MAX_LEADERBOARD_ENTRIES = 10;
 const GAME_DURATION = 60; // Game duration in seconds
-let gameTimer;
+let gameTimer = null;
 let timeRemaining;
 let isGameActive = false;
 
@@ -156,28 +143,30 @@ function spawnTarget() {
     }, 2000);
 }
 
-// Pointer lock setup
-renderer.domElement.addEventListener('click', () => {
-    if (!isPointerLocked) {
-        renderer.domElement.requestPointerLock();
-    }
-});
-
 // Updated mouse movement handler
 function onMouseMove(event) {
-    if (isPointerLocked && !isPaused) {
-        const movementX = event.movementX || event.mozMovementX || event.webkitMovementX || 0;
-        const movementY = event.movementY || event.mozMovementY || event.webkitMovementY || 0;
-        
-        // Apply sensitivity multiplier
-        const sensitivity = baseSensitivity * sensitivityMultiplier;
-        
-        // Update camera rotation
-        cameraHolder.rotation.y -= movementX * sensitivity;
-        verticalRotation -= movementY * sensitivity;
-        verticalRotation = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, verticalRotation));
-        camera.rotation.x = verticalRotation;
-    }
+    if (!isPointerLocked || isPaused) return;
+
+    // Get mouse movement with better precision handling
+    const movementX = event.movementX || event.mozMovementX || event.webkitMovementX || 0;
+    const movementY = event.movementY || event.mozMovementY || event.webkitMovementY || 0;
+
+    // Apply smoothing to large movements
+    const smoothX = Math.sign(movementX) * Math.min(Math.abs(movementX), 50);
+    const smoothY = Math.sign(movementY) * Math.min(Math.abs(movementY), 50);
+
+    // Update camera rotation
+    cameraHolder.rotation.y -= smoothX * sensitivity;
+
+    // Update vertical rotation with clamping
+    verticalRotation = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, 
+        verticalRotation - (smoothY * sensitivity)
+    ));
+    
+    camera.rotation.x = verticalRotation;
+
+    // Ensure rotation values stay within bounds
+    cameraHolder.rotation.y = ((cameraHolder.rotation.y % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
 }
 
 // Set up camera parent for proper rotation
@@ -221,7 +210,7 @@ let currentStreak = 0;
 let lastHitTime = 0;
 const STREAK_TIMEOUT = 1500; // 1.5 seconds to maintain streak
 
-// Update your hit detection function
+// Updated click handler with audio
 function onClick() {
     if (!isPointerLocked || !isGameActive) return;
     
@@ -234,47 +223,33 @@ function onClick() {
         const target = intersects[0].object;
         const hitPosition = intersects[0].point;
         
-        // Create hit marker
-        createHitMarker(hitPosition);
+        // Calculate distance from center for perfect hit detection
+        const distanceFromCenter = new THREE.Vector2(
+            hitPosition.x - target.position.x,
+            hitPosition.y - target.position.y
+        ).length();
         
-        // Update streak
-        const now = Date.now();
-        if (now - lastHitTime < STREAK_TIMEOUT) {
-            currentStreak++;
-        } else {
-            currentStreak = 1;
-        }
-        lastHitTime = now;
-        updateStreak();
-        
-        // Create score popup
-        createScorePopup(event.clientX, event.clientY, currentStreak);
-        
-        // Remove target
+        // Remove target and update score
         scene.remove(target);
         targets = targets.filter(t => t.id !== target.id);
-        
-        // Update score
         score++;
-        document.getElementById('score').textContent = `Score: ${score}`;
+        updateScore(score);
         
-        // Play sound and show feedback based on accuracy
-        if (hitPosition.distanceTo(target.position) < 0.1) {
-            // Perfect hit
+        // Play appropriate sound based on accuracy
+        if (distanceFromCenter < 0.1) {
             sounds.perfect.play();
             showHitText('PERFECT!', '#ff0000');
-            createHitEffect(hitPosition, 0xff0000); // Red particles
         } else {
-            // Normal hit
             sounds.hit.play();
             showHitText('HIT!', '#ffffff');
-            createHitEffect(hitPosition, 0xffffff); // White particles
         }
+        
+        // Create hit effect
+        createHitMarker(hitPosition);
     } else {
-        // Reset streak on miss
-        currentStreak = 0;
-        updateStreak();
+        // Miss handling
         sounds.miss.play();
+        showHitText('MISS', '#888888');
     }
 }
 
@@ -475,19 +450,33 @@ function togglePause(forcePause = null) {
     if (isPaused) {
         pauseMenu.style.display = 'flex';
         document.exitPointerLock();
+        if (gameTimer) {
+            clearInterval(gameTimer);
+            gameTimer = null;
+        }
     } else {
         pauseMenu.style.display = 'none';
         if (document.activeElement instanceof HTMLElement) {
             document.activeElement.blur();
         }
+        if (!gameTimer && isGameActive) {
+            gameTimer = setInterval(updateTimer, 1000);
+        }
     }
 }
 
-// Update your existing pointer lock change handler
+// Make sure pointer lock is handled properly
 document.addEventListener('pointerlockchange', () => {
     isPointerLocked = document.pointerLockElement === renderer.domElement;
     if (!isPointerLocked && !isPaused) {
         togglePause(true);
+    }
+});
+
+// Ensure clean pointer lock acquisition
+renderer.domElement.addEventListener('click', () => {
+    if (!isPointerLocked && !isPaused) {
+        renderer.domElement.requestPointerLock();
     }
 });
 
@@ -529,6 +518,8 @@ document.addEventListener('DOMContentLoaded', () => {
         startGame();
         renderer.domElement.requestPointerLock();
     });
+    
+    addVolumeControls();
 });
 
 // Initialize game timer
@@ -536,25 +527,14 @@ function startGame() {
     isGameActive = true;
     score = 0;
     timeRemaining = GAME_DURATION;
-    document.getElementById('score').textContent = `Score: ${score}`;
+    updateScore(score);
     
-    // Add timer display if not exists
-    if (!document.getElementById('timer')) {
-        const timerDiv = document.createElement('div');
-        timerDiv.id = 'timer';
-        timerDiv.style.cssText = `
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            color: white;
-            font-family: Arial;
-            font-size: 24px;
-        `;
-        document.body.appendChild(timerDiv);
+    // Clear any existing timer before starting a new one
+    if (gameTimer) {
+        clearInterval(gameTimer);
     }
-    
-    updateTimer();
     gameTimer = setInterval(updateTimer, 1000);
+    updateTimer(); // Initial timer display
 }
 
 function updateTimer() {
@@ -563,7 +543,10 @@ function updateTimer() {
         return;
     }
     
-    document.getElementById('timer').textContent = `Time: ${timeRemaining}s`;
+    const timerElement = document.getElementById('timer');
+    if (timerElement) {
+        timerElement.textContent = timeRemaining;
+    }
     timeRemaining--;
 }
 
@@ -636,4 +619,52 @@ document.addEventListener('click', () => {
     if (isPointerLocked && isGameActive) {
         expandCrosshair();
     }
-}); 
+});
+
+// Update score function
+function updateScore(newScore) {
+    const scoreElement = document.getElementById('score');
+    if (scoreElement) {
+        scoreElement.textContent = newScore;
+    }
+}
+
+// Add volume controls to the pause menu
+function addVolumeControls() {
+    const pauseMenu = document.querySelector('.menu-content');
+    
+    const volumeControl = document.createElement('div');
+    volumeControl.className = 'volume-control';
+    volumeControl.innerHTML = `
+        <div class="sensitivity-control">
+            <label for="volume">Sound Volume: <span id="volumeValue">100%</span></label>
+            <input type="range" id="volume" min="0" max="100" step="1" value="100">
+        </div>
+    `;
+    
+    pauseMenu.appendChild(volumeControl);
+    
+    // Volume slider functionality
+    const volumeSlider = document.getElementById('volume');
+    const volumeValue = document.getElementById('volumeValue');
+    
+    volumeSlider.addEventListener('input', (e) => {
+        const volume = e.target.value / 100;
+        volumeValue.textContent = `${e.target.value}%`;
+        
+        // Update all sound volumes
+        Object.values(sounds).forEach(sound => {
+            sound.volume(volume);
+        });
+    });
+}
+
+// Optional: Add sound preloading
+function preloadSounds() {
+    Object.values(sounds).forEach(sound => {
+        sound.load();
+    });
+}
+
+// Call this when the game starts
+preloadSounds(); 

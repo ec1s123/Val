@@ -324,6 +324,21 @@
             pointer-events: none;
             border-radius: 8px;
         }
+        .volume-control {
+            margin: 1rem 0;
+            padding: 1rem;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 5px;
+        }
+        .volume-control label {
+            color: white;
+            display: block;
+            margin-bottom: 0.5rem;
+        }
+        .volume-control input[type="range"] {
+            width: 100%;
+            margin: 0.5rem 0;
+        }
     </style>
 </head>
 <body>
@@ -331,12 +346,16 @@
         <div class="hud-top-container">
             <div class="score-container">
                 <div class="score-label">SCORE</div>
-                <div id="score">0</div>
+                <div class="score-value">
+                    <div id="score">0</div>
+                </div>
             </div>
             <div class="hud-divider"></div>
             <div class="timer-container">
                 <div class="timer-label">TIME</div>
-                <div id="timer">60</div>
+                <div class="timer-value">
+                    <div id="timer">60</div>
+                </div>
             </div>
         </div>
         
@@ -348,11 +367,6 @@
                 <div class="line line-bottom"></div>
                 <div class="line line-left"></div>
             </div>
-        </div>
-        
-        <div class="streak-counter" id="streakCounter">
-            <div class="streak-number">0</div>
-            <div class="streak-text">STREAK</div>
         </div>
     </div>
     <div id="pauseMenu" style="display: none;">
