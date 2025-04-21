@@ -1,18 +1,15 @@
 // Audio setup with clear feedback sounds
 const sounds = {
-    hit: new Howl({
-        src: ['https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3'], // Regular hit sound
-        volume: 0.4,
-        rate: 1.2 // Slightly faster for snappier feedback
-    }),
-    miss: new Howl({
-        src: ['https://assets.mixkit.co/active_storage/sfx/2947/2947-preview.mp3'], // Miss sound
-        volume: 0.3
-    }),
-    perfect: new Howl({
-        src: ['https://assets.mixkit.co/active_storage/sfx/1434/1434-preview.mp3'], // Perfect hit sound
-        volume: 0.5
-    })
+
+    click: new Howl({ src: ['sounds/click.mp3'], volume: 0.5 }),
+
+    miss: new Howl({ src: ['sounds/miss.mp3'], volume: 0.4 }),
+
+    hit: new Howl({ src: ['sounds/hit.mp3'], volume: 0.5 }),
+
+    perfect: new Howl({ src: ['sounds/perfect.mp3'], volume: 0.5 }),
+
+    perfectstreak: new Howl({ src: ['sounds/perfect-street-fighter-sound-effect.mp3'], volume: 0.5 })
 };
 
 // Three.js setup
@@ -22,16 +19,6 @@ const renderer = new THREE.WebGLRenderer();
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
-// Player movement variables
-const moveSpeed = 0.15;
-const player = {
-    velocity: new THREE.Vector3(),
-    direction: new THREE.Vector3(),
-    onGround: true,
-    canJump: true
-};
-
-// Movement controls state
 const keys = {
     w: false,
     a: false,
@@ -41,7 +28,7 @@ const keys = {
 };
 
 // Mouse control variables
-const sensitivity = 0.0015; // Reduced slightly for more stability
+const sensitivity = 0.0005; // Reduced slightly for more stability
 let isPointerLocked = false;
 let verticalRotation = 0;
 
@@ -72,15 +59,17 @@ camera.position.z = 10;
 let targets = [];
 let score = 0;
 
-// Add these variables at the top with your other state variables
+
 let isPaused = false;
-let baseSensitivity = 0.002;
+let baseSensitivity = 0.0001;
 let sensitivityMultiplier = 1.0;
 const MAX_LEADERBOARD_ENTRIES = 10;
-const GAME_DURATION = 60; // Game duration in seconds
+const GAME_DURATION = 30; 
 let gameTimer = null;
 let timeRemaining;
 let isGameActive = false;
+
+
 
 // Leaderboard management
 const leaderboard = {
@@ -143,7 +132,7 @@ function spawnTarget() {
     }, 2000);
 }
 
-// Updated mouse movement handler
+//mouse movement handler
 function onMouseMove(event) {
     if (!isPointerLocked || isPaused) return;
 
@@ -210,7 +199,9 @@ let currentStreak = 0;
 let lastHitTime = 0;
 const STREAK_TIMEOUT = 1500; // 1.5 seconds to maintain streak
 
-// Updated click handler with audio
+let perfectStreakCount = 0; // Add this near the top of your script
+
+
 function onClick() {
     if (!isPointerLocked || !isGameActive) return;
     
@@ -223,35 +214,49 @@ function onClick() {
         const target = intersects[0].object;
         const hitPosition = intersects[0].point;
         
-        // Calculate distance from center for perfect hit detection
         const distanceFromCenter = new THREE.Vector2(
             hitPosition.x - target.position.x,
             hitPosition.y - target.position.y
         ).length();
         
-        // Remove target and update score
         scene.remove(target);
         targets = targets.filter(t => t.id !== target.id);
-        score++;
-        updateScore(score);
+    
         
-        // Play appropriate sound based on accuracy
         if (distanceFromCenter < 0.1) {
+            perfectStreakCount++;
+
+            const streakMultiplier = 2 * perfectStreakCount;
+            score += streakMultiplier;
+
             sounds.perfect.play();
-            showHitText('PERFECT!', '#ff0000');
+            showHitText(`PERFECT! x${perfectStreakCount}`, '#00FF00');
+            
+            updateScore(score);
+
+            if (perfectStreakCount === 3) {
+                sounds.perfectstreak.play(); 
+                showHitText('PERFECT STREAK!', '#00FFFF');
+            }
+
         } else {
+            perfectStreakCount = 0; 
             sounds.hit.play();
-            showHitText('HIT!', '#ffffff');
+            showHitText('HIT!', '#FFFF00');
+            score += 1;
+            updateScore(score);
         }
-        
-        // Create hit effect
+
         createHitMarker(hitPosition);
+
     } else {
-        // Miss handling
+        perfectStreakCount = 0;
         sounds.miss.play();
-        showHitText('MISS', '#888888');
+        showHitText('MISS', '#FF0000');
     }
+    sounds.click.play();
 }
+
 
 // Add hit text feedback
 function showHitText(text, color) {
@@ -387,7 +392,7 @@ animate();
 
 // Add particle effect for hits
 function createHitEffect(position, color) {
-    const particleCount = 20;
+    const particleCount = 50;
     const geometry = new THREE.BufferGeometry();
     const positions = new Float32Array(particleCount * 3);
     const velocities = [];
@@ -598,21 +603,6 @@ function updateStreak() {
     }
 }
 
-// Add dynamic crosshair expansion on shot
-function expandCrosshair() {
-    const lines = document.querySelectorAll('.line');
-    lines.forEach(line => {
-        line.style.transition = 'transform 0.1s ease-out';
-        if (line.classList.contains('line-top')) line.style.transform = 'translateX(-50%) translateY(-2px)';
-        if (line.classList.contains('line-bottom')) line.style.transform = 'translateX(-50%) translateY(2px)';
-        if (line.classList.contains('line-left')) line.style.transform = 'translateY(-50%) translateX(-2px)';
-        if (line.classList.contains('line-right')) line.style.transform = 'translateY(-50%) translateX(2px)';
-        
-        setTimeout(() => {
-            line.style.transform = '';
-        }, 100);
-    });
-}
 
 // Call this when shooting
 document.addEventListener('click', () => {
@@ -659,12 +649,12 @@ function addVolumeControls() {
     });
 }
 
-// Optional: Add sound preloading
+
 function preloadSounds() {
     Object.values(sounds).forEach(sound => {
         sound.load();
     });
 }
 
-// Call this when the game starts
+
 preloadSounds(); 

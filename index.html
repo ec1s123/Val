@@ -11,25 +11,6 @@
         canvas { 
             display: block; 
         }
-        #score {
-            position: fixed;
-            top: 20px;
-            left: 20px;
-            color: white;
-            font-family: Arial;
-            font-size: 24px;
-            z-index: 100;
-        }
-        #crosshair {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            color: white;
-            font-size: 24px;
-            z-index: 100;
-            pointer-events: none;
-        }
         #fullscreenBtn {
             position: fixed;
             bottom: 20px;
@@ -205,17 +186,11 @@
             border-left: none;
         }
         .score-label, .timer-label {
-            font-size: 14px;
+            font-size: 32px;
             font-weight: 600;
             letter-spacing: 2px;
             opacity: 0.8;
             text-transform: uppercase;
-        }
-        #score, #timer {
-            font-size: 32px;
-            font-weight: 700;
-            line-height: 1;
-            margin-top: 5px;
         }
         .crosshair-container {
             position: absolute;
@@ -225,16 +200,6 @@
             width: 20px;
             height: 20px;
         }
-        .crosshair-dot {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 4px;
-            height: 4px;
-            background-color: rgba(255, 255, 255, 0.8);
-            border-radius: 50%;
-        }
         .crosshair-lines {
             position: absolute;
             width: 100%;
@@ -242,7 +207,7 @@
         }
         .line {
             position: absolute;
-            background-color: rgba(255, 255, 255, 0.8);
+            background-color: rgba(0, 255, 0, 0.8);
         }
         .line-top, .line-bottom {
             left: 50%;
