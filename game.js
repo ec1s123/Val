@@ -28,7 +28,7 @@ const keys = {
 };
 
 // Mouse control variables
-const sensitivity = 0.0005; // Reduced slightly for more stability
+const sensitivity = 0.0005; 
 let isPointerLocked = false;
 let verticalRotation = 0;
 
@@ -70,8 +70,6 @@ let timeRemaining;
 let isGameActive = false;
 
 
-
-// Leaderboard management
 const leaderboard = {
     scores: [],
     
@@ -136,35 +134,31 @@ function spawnTarget() {
 function onMouseMove(event) {
     if (!isPointerLocked || isPaused) return;
 
-    // Get mouse movement with better precision handling
     const movementX = event.movementX || event.mozMovementX || event.webkitMovementX || 0;
     const movementY = event.movementY || event.mozMovementY || event.webkitMovementY || 0;
 
-    // Apply smoothing to large movements
     const smoothX = Math.sign(movementX) * Math.min(Math.abs(movementX), 50);
     const smoothY = Math.sign(movementY) * Math.min(Math.abs(movementY), 50);
 
     // Update camera rotation
     cameraHolder.rotation.y -= smoothX * sensitivity;
 
-    // Update vertical rotation with clamping
     verticalRotation = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, 
         verticalRotation - (smoothY * sensitivity)
     ));
     
     camera.rotation.x = verticalRotation;
 
-    // Ensure rotation values stay within bounds
     cameraHolder.rotation.y = ((cameraHolder.rotation.y % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
 }
 
-// Set up camera parent for proper rotation
+
 const cameraHolder = new THREE.Object3D();
 scene.add(cameraHolder);
 cameraHolder.add(camera);
 camera.position.set(0, 2, 0); // Set camera height
 
-// Add hit marker animation
+
 function createHitMarker(position) {
     const hitMarkerGeometry = new THREE.RingGeometry(0.2, 0.3, 4);
     const hitMarkerMaterial = new THREE.MeshBasicMaterial({ 
@@ -194,12 +188,12 @@ function createHitMarker(position) {
     animateHitMarker();
 }
 
-// Add these variables to your existing ones
+
 let currentStreak = 0;
 let lastHitTime = 0;
-const STREAK_TIMEOUT = 1500; // 1.5 seconds to maintain streak
+const STREAK_TIMEOUT = 1500; 
 
-let perfectStreakCount = 0; // Add this near the top of your script
+let perfectStreakCount = 0; 
 
 
 function onClick() {
@@ -257,8 +251,6 @@ function onClick() {
     sounds.click.play();
 }
 
-
-// Add hit text feedback
 function showHitText(text, color) {
     const hitText = document.getElementById('hitText') || createHitTextElement();
     hitText.textContent = text;
@@ -266,14 +258,13 @@ function showHitText(text, color) {
     hitText.style.opacity = '1';
     hitText.style.transform = 'scale(1.2)';
     
-    // Reset after animation
+
     setTimeout(() => {
         hitText.style.opacity = '0';
         hitText.style.transform = 'scale(1)';
     }, 100);
 }
 
-// Create hit text element if it doesn't exist
 function createHitTextElement() {
     const hitText = document.createElement('div');
     hitText.id = 'hitText';
@@ -348,9 +339,8 @@ document.addEventListener('keyup', onKeyUp);
 window.addEventListener('resize', onWindowResize);
 
 // Spawn targets periodically
-setInterval(spawnTarget, 1000);
+setInterval(spawnTarget, 800);
 
-// Updated movement update function
 function updateMovement() {
     if (!isPointerLocked) return;
     
@@ -390,7 +380,6 @@ function animate() {
 }
 animate();
 
-// Add particle effect for hits
 function createHitEffect(position, color) {
     const particleCount = 50;
     const geometry = new THREE.BufferGeometry();
@@ -447,7 +436,6 @@ function createHitEffect(position, color) {
     animateParticles();
 }
 
-// Add pause menu functionality
 function togglePause(forcePause = null) {
     isPaused = forcePause !== null ? forcePause : !isPaused;
     const pauseMenu = document.getElementById('pauseMenu');
@@ -485,8 +473,8 @@ renderer.domElement.addEventListener('click', () => {
     }
 });
 
-// Add pause menu event listeners
 document.addEventListener('DOMContentLoaded', () => {
+    togglePause(true); // Force game to start paused
     const resumeBtn = document.getElementById('resumeBtn');
     const sensitivitySlider = document.getElementById('sensitivity');
     const sensValue = document.getElementById('sensValue');
@@ -494,6 +482,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     resumeBtn.addEventListener('click', () => {
         togglePause(false);
+        startGame();
         renderer.domElement.requestPointerLock();
     });
     
@@ -527,7 +516,6 @@ document.addEventListener('DOMContentLoaded', () => {
     addVolumeControls();
 });
 
-// Initialize game timer
 function startGame() {
     isGameActive = true;
     score = 0;
@@ -572,7 +560,6 @@ function endGame() {
     document.getElementById('gameOverModal').style.display = 'flex';
 }
 
-// Create score popup
 function createScorePopup(x, y, streak) {
     const popup = document.createElement('div');
     popup.className = 'score-popup';
@@ -590,7 +577,6 @@ function createScorePopup(x, y, streak) {
     setTimeout(() => popup.remove(), 500);
 }
 
-// Update streak counter
 function updateStreak() {
     const streakCounter = document.getElementById('streakCounter');
     const streakNumber = streakCounter.querySelector('.streak-number');
@@ -603,15 +589,12 @@ function updateStreak() {
     }
 }
 
-
-// Call this when shooting
 document.addEventListener('click', () => {
     if (isPointerLocked && isGameActive) {
         expandCrosshair();
     }
 });
 
-// Update score function
 function updateScore(newScore) {
     const scoreElement = document.getElementById('score');
     if (scoreElement) {
@@ -619,7 +602,6 @@ function updateScore(newScore) {
     }
 }
 
-// Add volume controls to the pause menu
 function addVolumeControls() {
     const pauseMenu = document.querySelector('.menu-content');
     

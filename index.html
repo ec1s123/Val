@@ -24,7 +24,7 @@
             left: 50%;
             transform: translate(-50%, -50%);
             font-family: Arial, sans-serif;
-            font-size: 24px;
+            font-size: 32px;
             font-weight: bold;
             transition: all 0.1s ease;
             pointer-events: none;
@@ -192,6 +192,12 @@
             opacity: 0.8;
             text-transform: uppercase;
         }
+        #score, #timer {
+            font-size: 32px; 
+            font-weight: 800;
+            line-height: 1;
+            margin-top: 5px;
+        }
         .crosshair-container {
             position: absolute;
             top: 50%;
@@ -268,7 +274,7 @@
         .score-popup {
             position: absolute;
             color: #fff;
-            font-size: 16px;
+            font-size: 32px;
             font-weight: 600;
             text-shadow: 0 0 5px rgba(0,0,0,0.5);
             animation: scorePopup 0.5s ease-out forwards;
@@ -319,7 +325,7 @@
             <div class="timer-container">
                 <div class="timer-label">TIME</div>
                 <div class="timer-value">
-                    <div id="timer">60</div>
+                    <div id="timer">30</div>
                 </div>
             </div>
         </div>
